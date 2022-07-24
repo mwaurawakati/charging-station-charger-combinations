@@ -31,11 +31,17 @@ import(
 	"os/user"
 	"time"
 	"strconv"
+	"os"
+    "os/exec"
+    "runtime"
+
 	
 )
 
 
 func Product(a []string, r int) func() []string {
+/*This the cartesian product of input iterables. Its python equivalent is
+itertools.product() function(https://docs.python.org/3/library/itertools.html)*/
     p := make([]string, r)
     x := make([]int, len(p))
     return func() []string {
@@ -61,6 +67,7 @@ func Product(a []string, r int) func() []string {
 	
 
 func main() {
+    CallClear()
 	user, err := user.Current()
 	if err != nil {
 		log.Fatalf(err.Error())
@@ -82,12 +89,12 @@ func main() {
     	
     	//Ask for the details
     	fmt.Print("How many levels(charger types) do you have?\n")
-	fmt.Print("Enter the number of levels of chargers: ")
+	    fmt.Print("Enter the number of levels of chargers: ")
     	fmt.Scanln(&nochargers)
     	fmt.Printf("%d\n", nochargers)
 	
-	fmt.Print("How many Electric Vehicles(EV) do you have?\n")
-	fmt.Print("Enter the number of type of EVs: ")
+	    fmt.Print("How many Electric Vehicles(EV) do you have?\n")
+	    fmt.Print("Enter the number of type of EVs: ")
     	fmt.Scanln(&noev)
     	fmt.Printf("%d\n", noev)
     	
@@ -108,4 +115,72 @@ func main() {
         fmt.Println(product)
     }
     fmt.Println("\n To find the best combination, please enter the chargers and EV details")
+    type charger struct{
+    poweroutput int
+    price int
+    }
+    type C map[string]charger
+
+    for i:=1;i<=nochargers;i++{
+        var poweroutput int
+        var price int
+        fmt.Println("Enter the details of charger level/type ",i)
+        fmt.Print("Enter the power output of level ",i," charger in kWh: ")
+        fmt.Scanln(&poweroutput)
+        fmt.Print("Enter the price of level ",i," charger: ")
+        fmt.Scanln(&price)
+        c:=charger{poweroutput,price}
+        EVs:=C{("level"+strconv.Itoa(i)):c}
+        fmt.Println(EVs)
+    }
+
+    type EV struct{
+    bat int
+    erange int
+    minrange int
+    maxtime int
+    count int
+    }
+    for i:=1;i<=noev;i++{
+        var bat int
+        var erange int
+        var minrange int
+        var maxtime int
+        var count int
+        fmt.Println("Enter the details of EV",i)
+        fmt.Print("Enter the batter capacity of EV",i," in kWh: ")
+        fmt.Scanln(&bat)
+        fmt.Print("Enter the range that EV",i," cam travel in kilometres: ")
+        fmt.Scanln(&erange)
+        fmt.Print("Enter the minimum range EV",i," should travel in KM: ")
+        fmt.Scanln(&minrange)
+        fmt.Print("Enter the maxmum time that EV",i," should be allowed to charge in the station: ")
+        fmt.Scanln(&maxtime)
+        fmt.Print("How many EV",i," are allowed to be in the charging station at one particular time: ")
+        fmt.Scanln(&count)
+    }
+}
+var clear map[string]func() //create a map for storing clear funcs
+
+func init() {
+    clear = make(map[string]func()) //Initialize it
+    clear["linux"] = func() {
+        cmd := exec.Command("clear") //Linux example, its tested
+        cmd.Stdout = os.Stdout
+        cmd.Run()
+    }
+    clear["windows"] = func() {
+        cmd := exec.Command("cmd", "/c", "cls") //Windows example, its tested
+        cmd.Stdout = os.Stdout
+        cmd.Run()
+    }
+}
+
+func CallClear() {
+    value, ok := clear[runtime.GOOS] //runtime.GOOS -> linux, windows, darwin etc.
+    if ok { //if we defined a clear func for that platform:
+        value()  //we execute it
+    } else { //unsupported platform
+        panic("Your platform is unsupported! I can't clear terminal screen :(")
+    }
 }
